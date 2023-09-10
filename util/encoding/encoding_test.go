@@ -3,6 +3,7 @@ package encoding
 import (
 	"bytes"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,17 +64,34 @@ func TestBinToBase64(t *testing.T) {
 }
 
 func TestBinToHex(t *testing.T) {
+	bigBytes := make([]byte, 65)
+	bigEncoding := strings.Builder{}
+	for i := 0; i < len(bigBytes); i++ {
+		bigBytes[i] = 1
+		bigEncoding.WriteString("01")
+	}
 	tests := []struct {
 		name          string
 		input         io.Reader
 		want          string
 		expectedError error
 	}{
-		// TODO: Add test cases.
 		{
 			"empty",
 			bytes.NewReader([]byte{}),
 			"",
+			nil,
+		},
+		{
+			"simple",
+			bytes.NewReader([]byte{0x4, 0xAF, 0x64}),
+			"04af64",
+			nil,
+		},
+		{
+			"multiple_loops",
+			bytes.NewReader(bigBytes),
+			bigEncoding.String(),
 			nil,
 		},
 	}
@@ -83,7 +101,9 @@ func TestBinToHex(t *testing.T) {
 			if tt.expectedError != nil {
 				assert.EqualError(t, err, tt.expectedError.Error(), "mismatching errors")
 			} else {
-				assert.Equal(t, tt.want, got, "mismatching decoding")
+				if assert.NoError(t, err) {
+					assert.Equal(t, tt.want, got, "mismatching decoding")
+				}
 			}
 		})
 	}
@@ -96,12 +116,35 @@ func TestHexToBin(t *testing.T) {
 		want          []byte
 		expectedError error
 	}{
-		// TODO: Add test cases.
 		{
 			"empty",
 			"",
 			[]byte{},
 			nil,
+		},
+		{
+			"basic",
+			"01af32",
+			[]byte{0x1, 0xAF, 0x32},
+			nil,
+		},
+		{
+			"invalid_input_length",
+			"012",
+			[]byte{},
+			InvalidHexLengthError,
+		},
+		{
+			"invalid_encoding1",
+			"01g4",
+			nil,
+			InvalidEncodingError{'g'},
+		},
+		{
+			"invalid_encoding2",
+			"014g",
+			nil,
+			InvalidEncodingError{'g'},
 		},
 	}
 	for _, tt := range tests {
@@ -110,7 +153,9 @@ func TestHexToBin(t *testing.T) {
 			if tt.expectedError != nil {
 				assert.EqualError(t, err, tt.expectedError.Error(), "mismatching errors")
 			} else {
-				assert.Equal(t, tt.want, got, "mismatching decoding")
+				if assert.NoError(t, err) {
+					assert.Equal(t, tt.want, got, "mismatching decoding")
+				}
 			}
 		})
 	}
