@@ -16,12 +16,35 @@ func TestBase64ToBin(t *testing.T) {
 		want        []byte
 		expectedErr error
 	}{
-		// TODO: Add test cases.
 		{
 			"empty",
 			"",
 			[]byte{},
 			nil,
+		},
+		{
+			"basic_wiki_example",
+			"TWFu",
+			[]byte{0x4d, 0x61, 0x6e},
+			nil,
+		},
+		{
+			"wiki_padding_1",
+			"TWE=",
+			[]byte{0x4d, 0x61},
+			nil,
+		},
+		{
+			"wiki_padding_2",
+			"TQ==",
+			[]byte{0x4d},
+			nil,
+		},
+		{
+			"invalid_length",
+			"ads",
+			nil,
+			InvalidLengthError,
 		},
 	}
 	for _, tt := range tests {
@@ -43,11 +66,28 @@ func TestBinToBase64(t *testing.T) {
 		want          string
 		expectedError error
 	}{
-		// TODO: Add test cases.
 		{
 			"empty",
 			bytes.NewReader([]byte{}),
 			"",
+			nil,
+		},
+		{
+			"wiki_example",
+			bytes.NewReader([]byte("Many hands make light work.")),
+			"TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu",
+			nil,
+		},
+		{
+			"padded_example_1",
+			bytes.NewReader([]byte("Ma")),
+			"TWE=",
+			nil,
+		},
+		{
+			"padded_example_2",
+			bytes.NewReader([]byte("M")),
+			"TQ==",
 			nil,
 		},
 	}
@@ -132,7 +172,7 @@ func TestHexToBin(t *testing.T) {
 			"invalid_input_length",
 			"012",
 			[]byte{},
-			InvalidHexLengthError,
+			InvalidLengthError,
 		},
 		{
 			"invalid_encoding1",
@@ -192,5 +232,15 @@ func TestCryptopalsValidation(t *testing.T) {
 			assert.Equal(t, "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t", got, "decoded value doesn't match")
 		}
 	}
+}
 
+func TestCryptopalsValidationInverse(t *testing.T) {
+	input := "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
+	binary, err := Base64ToBin(input)
+	if assert.NoError(t, err, "decoding failed") {
+		got, err := BinToHex(bytes.NewReader(binary))
+		if assert.NoError(t, err, "encoding failed") {
+			assert.Equal(t, "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d", got, "decoded value doesn't match")
+		}
+	}
 }
