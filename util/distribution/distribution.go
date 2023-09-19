@@ -1,7 +1,7 @@
 package distribution
 
-type Distribution interface {
-	Add(a any, n int) error
-	Ordering() []any
+type Distribution[T any] interface {
+	Add(a T, n int) error
+	Ordering() []T
 	Clear()
 }

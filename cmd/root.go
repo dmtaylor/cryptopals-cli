@@ -6,20 +6,22 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/dmtaylor/cryptopals-cli/cmd/singleByteXor"
 )
 
 var cfgFile string
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "cryptopals-cli",
 	Short: "Cyptopals codebase with command runners",
 	Long:  `Cryptopals code. Most code should be as library with tests, but there might be some cli commands for testing`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// This is called by main.main(). It only needs to happen once to the RootCmd.
 func Execute() {
-	err := rootCmd.Execute()
+	err := RootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -28,7 +30,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cryptopals-cli.yaml)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cryptopals-cli.yaml)")
+	RootCmd.AddCommand(singleByteXor.SingleByteXorCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
